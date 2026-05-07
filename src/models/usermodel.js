@@ -44,7 +44,7 @@ updatedAt: {
 usermodel.beforeCreate((user)=>{
 
     function  checkNameLength(value){
-        if(value.length < 2){
+        if(value.length <= 2){
             throw new Error("Name should be at least 2 characters long");
         }
 }

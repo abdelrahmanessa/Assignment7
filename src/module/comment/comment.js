@@ -1,6 +1,9 @@
 
 import  { Router } from "express";
 import  Comment  from "../../models/commentmodel.js";
+import { sequelize } from "../../database/connection.js";
+import postmodel from "../../models/postmodel.js";
+import { usermodel } from "../../models/usermodel.js";
 const router = Router();
 
 router.post('/comments', async (req, res) => {
@@ -31,7 +34,7 @@ router.patch('/comments/:commentId', async (req, res) => {
             return res.json({ message: "You are not allowed to update this comment" });
         }
         comment.content = content;
-
+await comment.save();
         res.json({
             message: "Comment updated successfully",
             comment
@@ -50,7 +53,7 @@ router.patch('/comments/:commentId', async (req, res) => {
 router.post('/comments/find-or-create', async (req, res) => {
     let {postId, userId, content} = req.body;
   let [comment,created] = await Comment.findOrCreate({
-    where: { postId, userId }, 
+   where: { postId, userId, content }, 
     defaults:{postId, userId, content}
     });
      if(created){
@@ -61,5 +64,108 @@ router.post('/comments/find-or-create', async (req, res) => {
     }
 
   })
+
+  router.get('/comments/search', async (req, res) => {
+
+    try {
+
+        let { word } = req.query;
+
+        let comments = await Comment.findAndCountAll({
+
+            where: {
+                content: sequelize.where(
+                    sequelize.fn('LOWER', sequelize.col('content')),
+                    'LIKE',
+                    `%${word.toLowerCase()}%`
+                )
+            }
+
+        });
+
+        res.json({
+            message: "Comments retrieved successfully",
+            comments
+        });
+
+    } catch (error) {
+
+        res.json({
+            message: error.message
+        });
+
+    }
+
+});
+
+router.get('/comments/newest/:postId', async (req, res) => {
+
+    try {
+
+        let { postId } = req.params;
+
+        let comments = await Comment.findAll({
+
+            where: { postId },
+
+            limit: 3,
+
+            order: [['createdAt', 'DESC']]
+
+        });
+
+        res.json({
+            message: "Comments retrieved successfully",
+            comments
+        });
+
+    } catch (error) {
+
+        res.json({
+            message: error.message
+        });
+
+    }
+
+});
+
+router.get('/comments/details/:id', async (req, res) => {
+
+    try {
+
+        let { id } = req.params;
+
+        let comment = await Comment.findByPk(id, {
+
+            include: [
+
+                {
+                    model: usermodel,
+                    attributes: ['id', 'name']
+                },
+
+                {
+                    model: postmodel,
+                    attributes: ['id', 'title']
+                }
+
+            ]
+
+        });
+
+        res.json({
+            message: "Comment retrieved successfully",
+            comment
+        });
+
+    } catch (error) {
+
+        res.json({
+            message: error.message
+        });
+
+    }
+
+});
     
 export default router;

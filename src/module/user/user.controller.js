@@ -2,7 +2,7 @@ import { Router } from "express";
 import { usermodel } from "../../models/usermodel.js";
 const router = Router();
 //reateanewuser(usingbuildandsave)(makesurethattheemaildoesnotexistbefore)
-router.post('/user-signup',async (req,res)=>{
+router.post('/user/signup',async (req,res)=>{
     let {name,email,password} = req.body;
     let existingUser = await usermodel.findOne({where:{email}});
     if(existingUser){
